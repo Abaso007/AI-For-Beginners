@@ -19,7 +19,7 @@ def load_dataset(ngrams=1,min_freq=1):
     print('Building vocab...')
     counter = collections.Counter()
     for (label, line) in train_dataset:
-        counter.update(torchtext.data.utils.ngrams_iterator(tokenizer(line),ngrams=ngrams))
+        counter |= torchtext.data.utils.ngrams_iterator(tokenizer(line),ngrams=ngrams)
     vocab = torchtext.vocab.vocab(counter, min_freq=min_freq)
     return train_dataset,test_dataset,classes,vocab
 
@@ -94,10 +94,7 @@ def train_epoch_emb(net,dataloader,lr=0.01,optimizer=None,loss_fn = torch.nn.Cro
     for labels,text,off in dataloader:
         optimizer.zero_grad()
         labels,text = labels.to(device), text.to(device)
-        if use_pack_sequence:
-            off = off.to('cpu')
-        else:
-            off = off.to(device)
+        off = off.to('cpu') if use_pack_sequence else off.to(device)
         out = net(text, off)
         loss = loss_fn(out,labels) #cross_entropy(out,labels)
         loss.backward()
